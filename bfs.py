@@ -1,80 +1,163 @@
 import numpy as np
 import pandas as pd
+import time 
 
-fileAddr = 'Inputs/in1.csv'
+FILE_ADDR = 'new_tests/test_a.csv'
+ROW = 0
+COLUMN = 1
+DIR = 2
 
 class Node:
-	def __init__(self, state, parent, operator, depth, cost):
+	def __init__(self, state, parent, operator, depth):
 		self.state = state
 		self.parent = parent
 		self.operator = operator
 		self.depth = depth
-		self.cost = cost
 
-def createNode(state, parent, operator, depth, cost):
-	return Node(state, parent, operator, depth, cost)
+def createNode(state, parent, operator, depth):
+	return Node(state, parent, operator, depth)
 
-def expandNode(node, nodes):
+def moveIsPossible(state, newPos):
+	#is in the board
+	if((newPos[ROW]    < 1) or (newPos[ROW]    > 8)):
+		return False
+	if((newPos[COLUMN] < 1) or (newPos[COLUMN] > 8)):
+		return False
+	#is empty
+	if(newPos in state):
+		return False
+	return True
+
+# def moveQueen(state, index, move):
+# 	queenPos = state[index]
+# 	newPos = [(queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN])]
+
+# 	newState = state[:]
+# 	if moveIsPossible(state, newPos):
+# 		newState[index] = newPos
+# 		return newState
+# 	else:
+# 		return None
+
+def queenIsSafe(currState, queenIndex):
+	state = ([x for x in currState])
+	checkingQueenData = state[queenIndex]
+
+	for index in range(0, 8):
+		if index != queenIndex:
+			toCheckWith = state[index]
+			if(toCheckWith[ROW] == checkingQueenData[ROW]):
+				return False
+			if(toCheckWith[COLUMN] == checkingQueenData[COLUMN]):
+				return False
+			if((checkingQueenData[ROW] - toCheckWith[ROW]) == (checkingQueenData[COLUMN] - toCheckWith[COLUMN])):
+				return False
+	return True
+
+
+def expandNode(node, moves, visitedNodes):
 	expandedNodes = []
+	currState = ([x for x in node.state])
 
-	for index, queen in node.state.iterrows():
-		expandedNodes.append
-
-	expandedNodes.append(createNode(moveUp(node.state), node, "Up", node.depth + 1, node.cost + 1))
-	expandedNodes.append(createNode(moveDown(node.state), node, "Down", node.depth + 1, node.cost + 1))
-	expandedNodes.append(createNode(moveLeft(node.state), node, "Left", node.depth + 1, node.cost + 1))
-	expandedNodes.append(createNode(moveRight(node.state), node, "Right", node.depth + 1, node.cost + 1))
-	
-	expandedNodes.append(createNode(moveUpRight(node.state), node, "UpRight", node.depth + 1, node.cost + 1))
-	expandedNodes.append(createNode(moveUpLeft(node.state), node, "UpLeft", node.depth + 1, node.cost + 1))
-	expandedNodes.append(createNode(moveDownRight(node.state), node, "DownRight", node.depth + 1, node.cost + 1))
-	expandedNodes.append(createNode(moveDownLeft(node.state), node, "DownLeft", node.depth + 1, node.cost + 1))
-
-	expandedNodes = [node for node in expanded_nodes if node.state != None]
+	for i, queen in currState:
+		index = i-1
+		queenPos = currState[index]
+		for move in moves:
+			newPos = ((queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN]))
+			newState = currState[:]
+			newState[index] = newPos
+			newState = frozenset(newState)
+			if newState in visitedNodes:
+				continue
+			if moveIsPossible(currState, newPos):
+				expandedNodes.append(createNode(newState, node, move[DIR], node.depth + 1))	
 	return expandedNodes
 
-def bfs( start, goal ):
-	nodes = []
-	expandedNodes = 0
-	visitedNodes = []
+def boardIsSafe(currState):
+	state = ([x for x in currState])
 	
-	nodes.append(create_node(start, None, None, 0, 0))
+	for first in range(0, 8):
+		firstQueen = state[first]
+		for second in range(first+1, 8):
+			secondQueen = state[second]
+			if(firstQueen[ROW] == secondQueen[ROW]):
+				return False
+			if(firstQueen[COLUMN] == secondQueen[COLUMN]):
+				return False
+			if((firstQueen[ROW] - secondQueen[ROW]) == (firstQueen[COLUMN] - secondQueen[COLUMN])):
+				return False
+	return True
+
+
+def print_grid(state):
+	for row in range(1, 9):
+		data = ""
+		for col in range(1,9):
+			if((row, col) in state):
+				data += "x "
+			else:
+				data += "o "
+		print(data)
+	print("\n")
+
+def bfs(start, moves):
+	nodes = []
+	visitedNodes = set()
+	
+	nodes.append(createNode(start, None, None, 0))
 
 	while True:
 		if len(nodes) == 0: 
 			return None
-		expandedNodes += 1
+		
 		node = nodes.pop(0)
-		visitedNodes.append(node.state)
+		if(node.state in visitedNodes):
+			continue
+		visitedNodes.add(node.state)
 		
-		if node.state == goal:
-			moves = []
-			temp = node
-			while True:
-				moves.insert(0, temp.operator)
-				if temp.depth == 1: 
-					break
-				temp = temp.parent
-			return moves, expandedNodes					
-		expandedAnswer = expandNode(node, nodes)
-		expandedAnswer = [node for node in expandedAnswer if node.state not in visitedNodes]
-		
+		i = 0		 					
+		expandedAnswer = expandNode(node, moves, visitedNodes)
+		for expNode in expandedAnswer:
+			i += 1
+			if boardIsSafe(expNode.state):
+				return expNode, (len(visitedNodes) + i)		
 		nodes.extend(expandedAnswer)
 
 def readInput(fileAddr):
 	data = pd.read_csv(fileAddr, header = None, names = ['row', 'col'] )
 	dataList = []
 	for index, d in data.iterrows():
-		currQueenData = list([d['row'], d['col']])
+		currQueenData = (d['row'], d['col'])
 		dataList.append(currQueenData)
+	dataList = frozenset(dataList)
 	return dataList
 
-def main():
-	print("in main")
-	queensData = readInput(fileAddr)
+def initMoves():
+	moves = []
 
-	for queen in queensData:
-		print(queen)
+	moves.append([ 0,  1, 'R'])
+	moves.append([ 0, -1, 'L'])
+	moves.append([-1,  0, 'U'])
+	moves.append([ 1,  0, 'D'])
+	moves.append([-1,  1, 'RU'])
+	moves.append([ 1,  1, 'RD'])
+	moves.append([-1, -1, 'LU'])
+	moves.append([ 1, -1, 'LD'])
+
+	return moves
+
+def main():
+	start = time.clock()
+
+	initialBoard = readInput(FILE_ADDR)
+	moves = initMoves()
+	finalState, steps = bfs(initialBoard, moves)
+
+	print("Elapsed Time:", time.clock() - start)
+	print("Number of steps:", steps)
+	print("Solution depth", finalState.depth)
+	print_grid(finalState.state)
+
 
 if __name__ == "__main__":
 	main()
