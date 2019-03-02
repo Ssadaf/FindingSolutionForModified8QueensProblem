@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import time 
 
-FILE_ADDR = 'new_tests/test_a.csv'
+FILE_ADDR = 'new_tests/test_c.csv'
 ROW = 0
 COLUMN = 1
 DIR = 2
@@ -96,28 +96,19 @@ def DFS(node, moves, maxDepth, visitedNodes):
     visitedNodes[currState] = node.depth
    
     if boardIsSafe(currState):
-        boards = []
-        temp = node
-        while True:
-            boards.insert(0, temp.state)
-            if temp.depth == 1: 
-                break
-            temp = temp.parent
-        return (True, moves, node, len(visitedNodes))                  
+        return (True, node, len(visitedNodes))                  
 
     if maxDepth <= 0:
         return (False, None)
 
     for index, queen in node.state:
-        if queenIsSafe(currState, index-1):
-            continue
         for move in moves:
             newState = moveQueen(currState, index-1, move)
             if(newState == None):
                 continue
             result = DFS(createNode(newState, node, move[DIR], node.depth + 1), moves, maxDepth - 1, visitedNodes)
             if(result[0]):
-                return (True, result[1], result[2], result[3])
+                return (True, result[1], result[2])
     return (False, None)
 
 def IDDFS(start, moves):
@@ -125,10 +116,11 @@ def IDDFS(start, moves):
     
     i = 0
     while True:
+        print(i)
         visitedNodes = {}
         result = DFS(initialState, moves, i, visitedNodes) 
         if(result[0]):
-            return (True, result[1], result[2],result[3])
+            return (True, result[1], result[2])
         i += 1
 
 def readInput(fileAddr):
@@ -159,13 +151,12 @@ def main():
     print_grid(initialBoard)
     moves = initMoves()
     
-    start = time.clock()
+    start = time.clock()    
     result = IDDFS(initialBoard, moves)
     print("Elapsed Time:", time.clock() - start)
     if(result[0]):
-        pathToRes = result[1]
-        finalState = result[2]
-        steps = result[3]
+        finalState = result[1]
+        steps = result[2]
         print("Number of steps:", steps)
         print("Solution depth", finalState.depth)
         print_grid(finalState.state)
