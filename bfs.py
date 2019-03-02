@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 import time 
+from collections import deque
 
-FILE_ADDR = 'new_tests/test_a.csv'
+FILE_ADDR = 'Inputs/in2.csv'
 ROW = 0
 COLUMN = 1
 DIR = 2
@@ -101,7 +102,7 @@ def print_grid(state):
 	print("\n")
 
 def bfs(start, moves):
-	nodes = []
+	nodes = deque()
 	visitedNodes = set()
 	
 	nodes.append(createNode(start, None, None, 0))
@@ -110,7 +111,7 @@ def bfs(start, moves):
 		if len(nodes) == 0: 
 			return None
 		
-		node = nodes.pop(0)
+		node = nodes.popleft()
 		if(node.state in visitedNodes):
 			continue
 		visitedNodes.add(node.state)
@@ -120,7 +121,7 @@ def bfs(start, moves):
 		for expNode in expandedAnswer:
 			i += 1
 			if boardIsSafe(expNode.state):
-				return expNode, (len(visitedNodes) + i)		
+				return expNode, (len(nodes) + i)		
 		nodes.extend(expandedAnswer)
 
 def readInput(fileAddr):
@@ -147,10 +148,11 @@ def initMoves():
 	return moves
 
 def main():
-	start = time.clock()
-
 	initialBoard = readInput(FILE_ADDR)
+	print_grid(initialBoard)
 	moves = initMoves()
+    
+	start = time.clock()
 	finalState, steps = bfs(initialBoard, moves)
 
 	print("Elapsed Time:", time.clock() - start)
