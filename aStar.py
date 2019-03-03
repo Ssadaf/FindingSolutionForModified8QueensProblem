@@ -2,20 +2,21 @@ import numpy as np
 import pandas as pd
 import time
 
-FILE_ADDR = 'Inputs/goodTest.csv'
+FILE_ADDR = 'Inputs/in1.csv'
 ROW = 0
 COLUMN = 1
 DIR = 2
 
 class Node:
-    def __init__(self, state, parent, operator, depth):
+    def __init__(self, state, parent, operator, depth, heuristic):
         self.state = state
         self.parent = parent
         self.operator = operator
         self.depth = depth
+        self.heuristic = heuristic
 
-def createNode(state, parent, operator, depth):
-    return Node(state, parent, operator, depth)
+def createNode(state, parent, operator, depth, heuristic):
+    return Node(state, parent, operator, depth, heuristic)
     
 def moveIsPossible(state, newPos):
     #is in the board
@@ -28,50 +29,16 @@ def moveIsPossible(state, newPos):
         return False
     return True
 
-def giveEmpty(data):
-    emptyRes = [i for i in range(0, 8)]
-    for d in data:
-        if(emptyRes.count(d)>0):
-            emptyRes.remove(d)
-    return emptyRes
+def moveQueen(state, index, move):
+    queenPos = state[index]
+    newPos = [(queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN])]
 
-def diagonalAttack(state, pos):
-    checkingQueenData = state[queenIndex]
-
-    for index in range(0, 8):
-        if index != queenIndex:
-            toCheckWith = state[index]
-            if((checkingQueenData[ROW] - toCheckWith[ROW]) == (checkingQueenData[COLUMN] - toCheckWith[COLUMN])):
-                return False
-    return True
-
-def moveQueen(state, index, move, emptyRows, emptyColumns):
-    numMoves = 0
-    newPos = state[index]
     newState = state[:]
-
-    while(newPos[ROW] not in emptyRows):
-        numMoves += 1
-        newPos = [(queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN])]
-        if(not moveIsPossible(newState, newPos)):
-            return (False, None)
+    if moveIsPossible(state, newPos):
         newState[index] = newPos
-
-    while(newPos[COLUMN] not in emptyColumns):
-        numMoves += 1
-        newPos = [(queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN])]
-        if(not moveIsPossible(newState, newPos)):
-            return (False, None)
-        newState[index] = newPos
-
-    while(diagonalAttack(newState, newPos)):
-        numMoves += 1
-        newPos = [(queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN])]
-        if(not moveIsPossible(newState, newPos)):
-            return (False, None)
-        newState[index] = newPos
-    
-    return (True, newState, numMoves)
+        return newState
+    else:
+        return None
 
 def queenIsSafe(state, queenIndex):
     checkingQueenData = state[queenIndex]
@@ -87,16 +54,24 @@ def queenIsSafe(state, queenIndex):
                 return False
     return True
 
-def expandNode(node, moves, emptyRows, emptyColumns):
+def h(state):
+    score = 0
+    for index, queen in state:
+        if(not queenIsSafe(state, index - 1)):
+            score = score + 1
+    return score
+
+def heuristicFunc(depth, state):   
+    return (depth + h(state))
+
+def expandNode(node, moves):
     expandedNodes = []
 
     for index, queen in node.state:
-        if queenIsSafe(node.state, index-1):
-            continue
         for move in moves:
-            res = moveQueen(node.state, index-1, move, emptyRows, emptyColumns)
-            if(res[0]):
-                expandedNodes.append(createNode(res[1], node, move[DIR], node.depth + res[2]))
+            res = moveQueen(node.state, index-1, move)
+            if(res != None):
+                expandedNodes.append(createNode(res, node, move[DIR], node.depth + 1, heuristicFunc(node.depth + 1, res)))
     return expandedNodes
 
 def boardIsSafe(state):
@@ -124,52 +99,30 @@ def print_grid(state):
 
     print("\n")
 
-def visitedBefore(visitedNodes, currState, depth):    
-    if( currState in visitedNodes):
-        if(visitedNodes[currState] <= depth):
-            return True
-    return False
+def keyFunc(x):
+    return x.heuristic
 
 def aStar(start, moves):	
     nodes = []
     expandedNodes = 0
-    visitedNodes = []
-    
-    nodes.append(createNode(start, None, None, 0))
+    moves = initMoves()
+
+    nodes.append(createNode(start, None, None, 0, heuristicFunc(0, start)))
     
     while True:
         if len(nodes) == 0: 
             return None
+
         nodes.sort(key = keyFunc)
         expandedNodes += 1
         node = nodes.pop(0)
-        visitedNodes.append(node.state)
+
+ 
         if boardIsSafe(node.state):
-            boards = []
-            temp = node
-            while True:
-                boards.insert(0, temp.state)
-                if temp.depth == 1: 
-                    break
-                temp = temp.parent
-            return boards, node, len(visitedNodes)
+            return node, expandedNodes
         
-        emptyRows = giveEmpty([s[ROW] for s in node.state])
-        emptyColumns = giveEmpty([s[ROW] for s in node.state])
-
-        expandedAnswer = expandNode(node, nodes, emptyRows, emptyColumns)
-        expandedAnswer = [node for node in expandedAnswer if node.state not in visitedNodes]
+        expandedAnswer = expandNode(node, moves)
         nodes.extend(expandedAnswer)
-def h(state):
-    score = 0
-    for index, queen in state:
-        if(not queenIsSafe(state, index - 1)):
-            score = score + 1
-    return score
-
-def keyFunc(x):	
-	return (x.depth + h(x.state))
-
 
 def readInput(fileAddr):
     data = pd.read_csv(fileAddr, header = None, names = ['row', 'col'] )
@@ -195,21 +148,19 @@ def initMoves():
 
 def main():
     start = time.clock()
+    moves = initMoves()
 
     initialBoard = readInput(FILE_ADDR)
     moves = initMoves()
     res = aStar(initialBoard, moves)
     if(res != None):
-        pathToRes, finalState, steps = res
+        finalState, steps = res
         print("Elapsed Time:", time.clock() - start)
         print("Number of steps:", steps)
         print("Solution depth", finalState.depth)
         print_grid(finalState.state)
     else:
         print("No solution Found")
-
-    
-
 
 if __name__ == "__main__":
     main()
