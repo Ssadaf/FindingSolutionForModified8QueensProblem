@@ -3,7 +3,7 @@ import pandas as pd
 import time 
 from collections import deque
 
-FILE_ADDR = 'Inputs/in2.csv'
+FILE_ADDR = 'new_tests/test_b.csv'
 ROW = 0
 COLUMN = 1
 DIR = 2
@@ -28,33 +28,6 @@ def moveIsPossible(state, newPos):
 	if(newPos in state):
 		return False
 	return True
-
-# def moveQueen(state, index, move):
-# 	queenPos = state[index]
-# 	newPos = [(queenPos[ROW] + move[ROW]), (queenPos[COLUMN] + move[COLUMN])]
-
-# 	newState = state[:]
-# 	if moveIsPossible(state, newPos):
-# 		newState[index] = newPos
-# 		return newState
-# 	else:
-# 		return None
-
-def queenIsSafe(currState, queenIndex):
-	state = ([x for x in currState])
-	checkingQueenData = state[queenIndex]
-
-	for index in range(0, 8):
-		if index != queenIndex:
-			toCheckWith = state[index]
-			if(toCheckWith[ROW] == checkingQueenData[ROW]):
-				return False
-			if(toCheckWith[COLUMN] == checkingQueenData[COLUMN]):
-				return False
-			if((checkingQueenData[ROW] - toCheckWith[ROW]) == (checkingQueenData[COLUMN] - toCheckWith[COLUMN])):
-				return False
-	return True
-
 
 def expandNode(node, moves, visitedNodes):
 	expandedNodes = []
@@ -85,7 +58,7 @@ def boardIsSafe(currState):
 				return False
 			if(firstQueen[COLUMN] == secondQueen[COLUMN]):
 				return False
-			if((firstQueen[ROW] - secondQueen[ROW]) == (firstQueen[COLUMN] - secondQueen[COLUMN])):
+			if(abs((firstQueen[ROW] - secondQueen[ROW])) == abs((firstQueen[COLUMN] - secondQueen[COLUMN]))):
 				return False
 	return True
 
@@ -112,6 +85,7 @@ def bfs(start, moves):
 			return None
 		
 		node = nodes.popleft()
+		print_grid(node.state)
 		if(node.state in visitedNodes):
 			continue
 		visitedNodes.add(node.state)
@@ -151,6 +125,13 @@ def main():
 	initialBoard = readInput(FILE_ADDR)
 	print_grid(initialBoard)
 	moves = initMoves()
+
+	if boardIsSafe(initialBoard):
+		print("Elapsed Time:", 0)
+		print("Number of steps:", 0)
+		print("Solution depth", 0)
+		print_grid(initialBoard)
+
     
 	start = time.clock()
 	finalState, steps = bfs(initialBoard, moves)
