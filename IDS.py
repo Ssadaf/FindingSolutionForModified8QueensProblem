@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import time 
 
-FILE_ADDR = 'new_tests/test_c.csv'
+FILE_ADDR = 'Inputs/in2.csv'
 ROW = 0
 COLUMN = 1
 DIR = 2
@@ -57,6 +57,7 @@ def queenIsSafe(currState, queenIndex):
 
 def boardIsSafe(currState):
     state = ([x for x in currState])
+    
     for first in range(0, 8):
         firstQueen = state[first]
         for second in range(first+1, 8):
@@ -65,10 +66,9 @@ def boardIsSafe(currState):
                 return False
             if(firstQueen[COLUMN] == secondQueen[COLUMN]):
                 return False
-            if((firstQueen[ROW] - secondQueen[ROW]) == (firstQueen[COLUMN] - secondQueen[COLUMN])):
+            if(abs((firstQueen[ROW] - secondQueen[ROW])) == abs((firstQueen[COLUMN] - secondQueen[COLUMN]))):
                 return False
     return True
-
 
 def print_grid(state):
     for row in range(1, 9):
@@ -116,7 +116,6 @@ def IDDFS(start, moves):
     
     i = 0
     while True:
-        print(i)
         visitedNodes = {}
         result = DFS(initialState, moves, i, visitedNodes) 
         if(result[0]):
