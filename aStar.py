@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import time
 
-FILE_ADDR = 'Inputs/in1.csv'
+FILE_ADDR = 'Inputs/in3.csv'
 ROW = 0
 COLUMN = 1
 DIR = 2
@@ -41,24 +41,58 @@ def moveQueen(state, index, move):
         return None
 
 def queenIsSafe(state, queenIndex):
+    i = 0
     checkingQueenData = state[queenIndex]
 
     for index in range(0, 8):
         if index != queenIndex:
             toCheckWith = state[index]
             if(toCheckWith[ROW] == checkingQueenData[ROW]):
-                return False
+                i += 1
+                continue
             if(toCheckWith[COLUMN] == checkingQueenData[COLUMN]):
-                return False
-            if((checkingQueenData[ROW] - toCheckWith[ROW]) == (checkingQueenData[COLUMN] - toCheckWith[COLUMN])):
-                return False
-    return True
+                i += 1
+                continue
+            if(abs(checkingQueenData[ROW] - toCheckWith[ROW]) == abs(checkingQueenData[COLUMN] - toCheckWith[COLUMN])):
+                i += 1
+                continue
+    return i
 
 def h(state):
     score = 0
-    for index, queen in state:
-        if(not queenIsSafe(state, index - 1)):
-            score = score + 1
+    index = 0
+    for queen in state:
+        score += queenIsSafe(state, index - 1)
+        index += 1
+    
+    # if(score % 2 ==1):
+    #     queenIndex = 0
+    #     for queen in state:
+    #         print(queenIndex)
+    #         queenIndex += 1
+    #     print(":::::::")
+    #     print_grid(state)
+    #     for queenIndex, queen in state:
+    #         queenIndex = queenIndex - 1
+    #         checkingQueenData = state[queenIndex]
+    #         print("##", queenIndex,"###", checkingQueenData)
+    #         for index in range(0, 8):
+    #             if index != queenIndex:
+    #                 toCheckWith = state[index]
+    #                 print(index , "***", toCheckWith)
+    #                 if(toCheckWith[ROW] == checkingQueenData[ROW]):
+    #                     print(toCheckWith)
+    #                     continue
+    #                 if(toCheckWith[COLUMN] == checkingQueenData[COLUMN]):
+    #                     print(toCheckWith)
+    #                     continue
+    #                 if(abs(checkingQueenData[ROW] - toCheckWith[ROW]) == abs(checkingQueenData[COLUMN] - toCheckWith[COLUMN])):
+    #                     print(toCheckWith)                                             
+    #                     continue
+    #     quit()
+                    
+
+
     return score
 
 def heuristicFunc(depth, state):   
@@ -66,12 +100,14 @@ def heuristicFunc(depth, state):
 
 def expandNode(node, moves):
     expandedNodes = []
+    index = 0
 
-    for index, queen in node.state:
+    for  queen in node.state:
         for move in moves:
-            res = moveQueen(node.state, index-1, move)
+            res = moveQueen(node.state, index, move)
             if(res != None):
                 expandedNodes.append(createNode(res, node, move[DIR], node.depth + 1, heuristicFunc(node.depth + 1, res)))
+        index += 1
     return expandedNodes
 
 def boardIsSafe(state):
@@ -83,7 +119,7 @@ def boardIsSafe(state):
                 return False
             if(firstQueen[COLUMN] == secondQueen[COLUMN]):
                 return False
-            if((firstQueen[ROW] - secondQueen[ROW]) == (firstQueen[COLUMN] - secondQueen[COLUMN])):
+            if(abs(firstQueen[ROW] - secondQueen[ROW]) == abs(firstQueen[COLUMN] - secondQueen[COLUMN])):
                 return False
     return True
 
@@ -102,7 +138,7 @@ def print_grid(state):
 def keyFunc(x):
     return x.heuristic
 
-def aStar(start, moves):	
+def aStar(start, moves):    
     nodes = []
     expandedNodes = 0
     moves = initMoves()
@@ -117,7 +153,9 @@ def aStar(start, moves):
         expandedNodes += 1
         node = nodes.pop(0)
 
- 
+       
+
+
         if boardIsSafe(node.state):
             return node, expandedNodes
         
